@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Utkrsha's Dev Notes | Full-Stack Blog &amp; Express API</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'Georgia', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            paper: '#FAF8F5',
+            stoneBorder: '#E7E2DA',
+            charcoal: '#1C1917',
+            terracotta: '#D95D39',
+            terracottaHover: '#C24D2C',
+            terracottaDark: '#E87A5D',
+            sage: '#2A6F68',
+            sageDark: '#4EA89E',
+            espresso: '#161412',
+            espressoCard: '#201D1A',
+            espressoBorder: '#332E29',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(217, 93, 57, 0.35); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(217, 93, 57, 0.65); }
+    .glass-nav {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+      animation: fadeSlideUp 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-paper text-charcoal dark:bg-espresso dark:text-stone-100 min-h-screen flex flex-col transition-colors duration-300 selection:bg-terracotta selection:text-white">
+
+  <!-- Toast Notification Banner -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 glass-nav bg-paper/90 dark:bg-espresso/90 border-b border-stoneBorder dark:border-espressoBorder">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('blog')">
+        <div class="w-10 h-10 rounded-xl bg-terracotta dark:bg-terracottaDark flex items-center justify-center text-white font-serif font-bold text-lg shadow-sm">
+          U.
+        </div>
+        <div>
+          <span class="font-serif font-bold text-lg sm:text-xl tracking-tight text-charcoal dark:text-stone-100">Utkrsha's Dev Notes</span>
+          <span class="hidden sm:inline-block ml-2 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-sage/10 text-sage dark:bg-sageDark/15 dark:text-sageDark border border-sage/20 dark:border-sageDark/25">Module 02</span>
+        </div>
+      </div>
+
+      <!-- View Switcher Tabs -->
+      <nav class="flex items-center bg-stone-200/70 dark:bg-espressoCard p-1 rounded-xl border border-stoneBorder dark:border-espressoBorder">
+        <button id="tab-btn-blog" onclick="switchTab('blog')" class="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-terracotta text-white shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <span>My Blog Space</span>
+        </button>
+        <button id="tab-btn-api" onclick="switchTab('api')" class="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-stone-600 dark:text-stone-300 hover:text-terracotta">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>Live API Tester</span>
+          <span id="api-log-badge" class="ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-sage/15 text-sage dark:bg-sageDark/20 dark:text-sageDark font-mono font-semibold">0</span>
+        </button>
+      </nav>
+
+      <!-- Right Controls: Theme Toggle & Auth Status -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Light/Dark Theme" class="p-2.5 rounded-xl bg-white dark:bg-espressoCard hover:bg-stone-100 dark:hover:bg-stone-800 text-charcoal dark:text-stone-200 border border-stoneBorder dark:border-espressoBorder transition">
+          <svg id="icon-sun" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg id="icon-moon" class="w-4 h-4 block dark:hidden text-terracotta" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: MY BLOG SPACE FRONTEND             -->
+    <!-- ========================================== -->
+    <section id="view-blog" class="space-y-8 animate-fade-up">
+      
+      <!-- Hero Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-espressoCard p-6 sm:p-8 shadow-sm border border-stoneBorder dark:border-espressoBorder">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="max-w-2xl space-y-2.5">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sage/10 dark:bg-sageDark/15 text-sage dark:text-sageDark text-xs font-semibold">
+              <span class="w-2 h-2 rounded-full bg-sage dark:bg-sageDark animate-pulse"></span>
+              Express.js REST API Active · Built by Utkrsha
+            </div>
+            <h1 class="font-serif text-2xl sm:text-4xl font-bold tracking-tight text-charcoal dark:text-stone-100">
+              Notes on Backend Engineering, APIs &amp; Tech
+            </h1>
+            <p class="text-stone-600 dark:text-stone-300 text-sm sm:text-base leading-relaxed">
+              Sign in with your developer account and publish posts directly through my Node.js &amp; Express endpoints (<code class="font-mono text-xs bg-stone-100 dark:bg-espresso px-1.5 py-0.5 rounded border border-stoneBorder dark:border-espressoBorder text-terracotta dark:text-terracottaDark">POST /api/blogs</code>).
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button onclick="openCreateModal()" class="px-5 py-3 rounded-xl bg-terracotta hover:bg-terracottaHover dark:bg-terracottaDark text-white font-semibold text-sm shadow-sm flex items-center gap-2 transition transform active:scale-95">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              <span>Write a Post</span>
+            </button>
+            <button onclick="switchTab('api')" class="px-4 py-3 rounded-xl bg-paper dark:bg-espresso hover:bg-stone-100 dark:hover:bg-stone-800 text-charcoal dark:text-stone-200 font-semibold text-sm border border-stoneBorder dark:border-espressoBorder transition">
+              Inspect API &amp; Code
+            </button>
+          </div>
+        </div>
+        <div class="absolute -right-10 -bottom-16 w-56 h-56 rounded-full bg-terracotta/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute right-40 -top-16 w-48 h-48 rounded-full bg-sage/10 blur-3xl pointer-events-none"></div>
+      </div>
+
+      <!-- Search & Category Filter Bar -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-espressoCard p-4 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm">
+        <div class="relative flex-1 max-w-md">
+          <svg class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input id="search-input" type="text" oninput="renderBlogs()" placeholder="Search notes by title, tag, or topic..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:outline-none focus:ring-2 focus:ring-terracotta transition" />
+        </div>
+
+        <div id="category-filters" class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          <button onclick="setCategory('All')" data-cat="All" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-terracotta text-white transition">All Notes</button>
+          <button onclick="setCategory('Backend')" data-cat="Backend" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder hover:border-terracotta transition">Backend</button>
+          <button onclick="setCategory('EV & IoT')" data-cat="EV & IoT" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder hover:border-terracotta transition">EV &amp; IoT</button>
+          <button onclick="setCategory('Dev Journey')" data-cat="Dev Journey" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder hover:border-terracotta transition">Dev Journey</button>
+          <button onclick="setCategory('Bookmarked')" data-cat="Bookmarked" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder hover:border-terracotta transition">Reading List</button>
+        </div>
+      </div>
+
+      <!-- Blog Posts Grid -->
+      <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: LIVE API TESTER & BACKEND CODE     -->
+    <!-- ========================================== -->
+    <section id="view-api" class="hidden space-y-8 animate-fade-up">
+      
+      <!-- Top Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-espressoCard p-5 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wider text-stone-400">Backend Runtime</div>
+          <div class="mt-1 text-lg font-bold text-terracotta dark:text-terracottaDark">Node.js + Express.js</div>
+          <div class="mt-1 text-xs text-stone-500 dark:text-stone-400">REST API with CORS &amp; JSON</div>
+        </div>
+        <div class="bg-white dark:bg-espressoCard p-5 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wider text-stone-400">Built Endpoints</div>
+          <div class="mt-1 text-lg font-bold text-sage dark:text-sageDark">5 Working Routes</div>
+          <div class="mt-1 text-xs text-stone-500 dark:text-stone-400">Register, Login, Get/Create/Delete</div>
+        </div>
+        <div class="bg-white dark:bg-espressoCard p-5 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wider text-stone-400">Current Session</div>
+          <div id="inspector-auth-status" class="mt-1 text-lg font-bold text-amber-600 dark:text-amber-400">Not Logged In</div>
+          <div class="mt-1 text-xs text-stone-500 dark:text-stone-400 truncate font-mono" id="inspector-jwt-preview">No Bearer token set</div>
+        </div>
+        <div class="bg-white dark:bg-espressoCard p-5 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm">
+          <div class="text-xs font-semibold uppercase tracking-wider text-stone-400">Local Store</div>
+          <div id="inspector-db-stats" class="mt-1 text-lg font-bold text-charcoal dark:text-stone-100">0 Users · 0 Posts</div>
+          <div class="mt-1 text-xs text-stone-500 dark:text-stone-400">Persisted in browser storage</div>
+        </div>
+      </div>
+
+      <!-- Main Split: Interactive API Tester + Live HTTP Inspector -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Endpoint Triggers & LinkedIn Draft -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-white dark:bg-espressoCard p-5 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="font-serif font-bold text-lg flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-sage dark:bg-sageDark"></span>
+                Test REST Endpoints
+              </h2>
+              <span class="text-xs font-mono text-stone-400">localhost:5000</span>
+            </div>
+            <p class="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+              Trigger any route below to test how the frontend talks to the Express server and inspect the exact request headers and JSON payload.
+            </p>
+
+            <div class="space-y-2.5">
+              <!-- POST /api/auth/register -->
+              <div class="p-3 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-terracotta/15 text-terracotta dark:text-terracottaDark">POST</span>
+                    <code class="text-xs font-mono font-semibold truncate">/api/auth/register</code>
+                  </div>
+                  <p class="text-[11px] text-stone-500 mt-0.5">Creates a new test user &amp; returns token</p>
+                </div>
+                <button onclick="triggerQuickDemoRegister()" class="shrink-0 px-3 py-1.5 rounded-lg bg-terracotta hover:bg-terracottaHover text-white text-xs font-semibold transition">Run</button>
+              </div>
+
+              <!-- POST /api/auth/login -->
+              <div class="p-3 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-terracotta/15 text-terracotta dark:text-terracottaDark">POST</span>
+                    <code class="text-xs font-mono font-semibold truncate">/api/auth/login</code>
+                  </div>
+                  <p class="text-[11px] text-stone-500 mt-0.5">Logs in with Utkrsha's dev credentials</p>
+                </div>
+                <button onclick="triggerQuickDemoLogin()" class="shrink-0 px-3 py-1.5 rounded-lg bg-terracotta hover:bg-terracottaHover text-white text-xs font-semibold transition">Run</button>
+              </div>
+
+              <!-- GET /api/blogs -->
+              <div class="p-3 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sage/15 text-sage dark:text-sageDark">GET</span>
+                    <code class="text-xs font-mono font-semibold truncate">/api/blogs</code>
+                  </div>
+                  <p class="text-[11px] text-stone-500 mt-0.5">Fetches all published blog entries</p>
+                </div>
+                <button onclick="apiFetchBlogs(true)" class="shrink-0 px-3 py-1.5 rounded-lg bg-sage hover:opacity-90 text-white text-xs font-semibold transition">Run</button>
+              </div>
+
+              <!-- POST /api/blogs -->
+              <div class="p-3 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-terracotta/15 text-terracotta dark:text-terracottaDark">POST</span>
+                    <code class="text-xs font-mono font-semibold truncate">/api/blogs</code>
+                  </div>
+                  <p class="text-[11px] text-stone-500 mt-0.5">Protected route (needs Bearer token)</p>
+                </div>
+                <button onclick="openCreateModal()" class="shrink-0 px-3 py-1.5 rounded-lg bg-terracotta hover:bg-terracottaHover text-white text-xs font-semibold transition">Write</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- LinkedIn Post Draft Box -->
+          <div class="bg-white dark:bg-espressoCard p-5 rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-serif font-bold text-base text-charcoal dark:text-stone-100">LinkedIn Post Draft</h3>
+              <span class="text-[11px] font-semibold text-sage dark:text-sageDark">Module 02 Deliverable</span>
+            </div>
+            <p class="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+              Ready to share your Module 02 milestone? Copy this clean, natural update for your LinkedIn post.
+            </p>
+            <button onclick="copyLinkedInPost()" class="w-full py-2.5 px-4 rounded-xl bg-charcoal dark:bg-espresso hover:opacity-90 text-white text-xs font-semibold border border-stoneBorder dark:border-espressoBorder flex items-center justify-center gap-2 transition">
+              <svg class="w-4 h-4 text-terracottaDark" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+              <span>Copy LinkedIn Post Draft</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Live HTTP Network Logger -->
+        <div class="lg:col-span-7 bg-white dark:bg-espressoCard rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm flex flex-col overflow-hidden">
+          <div class="p-4 border-b border-stoneBorder dark:border-espressoBorder flex items-center justify-between">
+            <h2 class="font-serif font-bold text-base">HTTP Request &amp; Response Log</h2>
+            <button onclick="clearApiLogs()" class="text-xs font-semibold text-stone-500 hover:text-terracotta transition">Clear Log</button>
+          </div>
+          <div id="api-logs-container" class="p-4 space-y-3 max-h-[540px] overflow-y-auto font-mono text-xs bg-paper/70 dark:bg-espresso/70 flex-1">
+            <!-- Logs populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Downloadable Node.js + Express.js Source Code Section -->
+      <div class="bg-white dark:bg-espressoCard rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-stoneBorder dark:border-espressoBorder flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="font-serif font-bold text-lg">Backend Code (<code class="text-terracotta dark:text-terracottaDark font-mono text-base">server.js</code>)</h2>
+            <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              Clean Node.js &amp; Express.js implementation ready to push to your GitHub repository.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="switchCodeFile('server.js')" id="code-tab-server" class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-terracotta text-white transition">server.js</button>
+            <button onclick="switchCodeFile('package.json')" id="code-tab-package" class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder transition">package.json</button>
+            <button onclick="copyActiveCode()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sage hover:opacity-90 text-white flex items-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span>Copy</span>
+            </button>
+            <button onclick="downloadActiveCode()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-charcoal dark:bg-espresso hover:opacity-90 text-white border border-stoneBorder dark:border-espressoBorder flex items-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download</span>
+            </button>
+          </div>
+        </div>
+        <div class="p-5 bg-[#191715] text-stone-200 overflow-x-auto max-h-[460px]">
+          <pre id="code-viewer" class="font-mono text-xs leading-relaxed"></pre>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: USER LOGIN & REGISTRATION         -->
+  <!-- ========================================== -->
+  <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-charcoal/70 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-espressoCard w-full max-w-md rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-2xl overflow-hidden animate-fade-up">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 id="auth-modal-title" class="font-serif text-xl font-bold">Welcome Back</h3>
+          <button onclick="closeAuthModal()" class="p-1.5 rounded-lg text-stone-400 hover:text-charcoal dark:hover:text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder mb-5">
+          <button id="auth-switch-login" onclick="setAuthMode('login')" class="py-2 rounded-lg text-xs font-bold bg-terracotta text-white transition">Sign In</button>
+          <button id="auth-switch-register" onclick="setAuthMode('register')" class="py-2 rounded-lg text-xs font-bold text-stone-600 dark:text-stone-300 transition">Create Account</button>
+        </div>
+
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <div id="auth-name-group" class="hidden">
+            <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Your Name</label>
+            <input id="auth-name" type="text" placeholder="e.g. Utkrsha" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Email Address</label>
+            <input id="auth-email" type="email" required value="utkrsha@devnotes.in" placeholder="utkrsha@devnotes.in" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none" />
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300">Password</label>
+              <button type="button" onclick="fillDemoCredentials()" class="text-[11px] font-semibold text-terracotta dark:text-terracottaDark hover:underline">Use demo account</button>
+            </div>
+            <input id="auth-password" type="password" required value="utkrsha123" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none" />
+          </div>
+          <button type="submit" id="auth-submit-btn" class="w-full py-3 rounded-xl bg-terracotta hover:bg-terracottaHover text-white font-semibold text-sm shadow-sm transition">
+            Sign In (POST /api/auth/login)
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 2: WRITE A BLOG POST                 -->
+  <!-- ========================================== -->
+  <div id="create-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-charcoal/70 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-espressoCard w-full max-w-xl rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-2xl overflow-hidden animate-fade-up max-h-[90vh] flex flex-col">
+      <div class="p-5 border-b border-stoneBorder dark:border-espressoBorder flex items-center justify-between">
+        <div>
+          <h3 class="font-serif text-lg font-bold">Write a New Blog Post</h3>
+          <p class="text-xs text-stone-500 dark:text-stone-400 font-mono">Sends authenticated request to POST /api/blogs</p>
+        </div>
+        <button onclick="closeCreateModal()" class="p-1.5 rounded-lg text-stone-400 hover:text-charcoal dark:hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreateBlog(event)" class="p-5 space-y-4 overflow-y-auto">
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Post Title *</label>
+          <input id="blog-title" type="text" required placeholder="e.g. How I Built My First Express.js REST API" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Topic</label>
+            <select id="blog-category" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none">
+              <option value="Backend">Backend</option>
+              <option value="EV & IoT">EV &amp; IoT</option>
+              <option value="Dev Journey">Dev Journey</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Tags (comma separated)</label>
+            <input id="blog-tags" type="text" placeholder="nodejs, express, api" value="nodejs, express, backend" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Header Banner Style</label>
+          <select id="blog-cover" class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none">
+            <option value="https://placehold.co/800x420/d95d39/faf8f5?text=Node.js+%26+Express+Notes">Warm Terracotta Card</option>
+            <option value="https://placehold.co/800x420/2a6f68/faf8f5?text=REST+API+%26+Backend+Flow">Sage Teal Studio</option>
+            <option value="https://placehold.co/800x420/292524/e87a5d?text=Engineering+%26+Code+Journal">Charcoal Ink Editorial</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 dark:text-stone-300 mb-1">Post Content *</label>
+          <textarea id="blog-content" rows="5" required placeholder="Share what you learned, code snippets, or project notes..." class="w-full px-3.5 py-2.5 rounded-xl bg-paper dark:bg-espresso border border-stoneBorder dark:border-espressoBorder text-sm focus:ring-2 focus:ring-terracotta outline-none"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeCreateModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-espresso transition">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-terracotta hover:bg-terracottaHover text-white font-semibold text-xs shadow-sm transition">
+            Publish Post
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 3: ARTICLE READER MODAL              -->
+  <!-- ========================================== -->
+  <div id="reader-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-charcoal/75 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-espressoCard w-full max-w-2xl rounded-2xl border border-stoneBorder dark:border-espressoBorder shadow-2xl overflow-hidden animate-fade-up max-h-[90vh] flex flex-col">
+      <div class="relative h-48 sm:h-56 bg-stone-900">
+        <img id="reader-cover" src="" alt="Cover" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/800x420/292524/e87a5d?text=Dev+Notes'" />
+        <button onclick="closeReaderModal()" class="absolute top-4 right-4 p-2 rounded-full bg-charcoal/75 text-white hover:bg-charcoal transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="reader-category" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-terracotta/15 text-terracotta dark:text-terracottaDark"></span>
+          <span id="reader-date" class="text-xs text-stone-400"></span>
+        </div>
+        <h2 id="reader-title" class="font-serif text-2xl font-bold leading-tight"></h2>
+        <div class="flex items-center gap-3 pb-3 border-b border-stoneBorder dark:border-espressoBorder">
+          <div id="reader-avatar" class="w-8 h-8 rounded-full bg-terracotta text-white font-serif font-bold text-xs flex items-center justify-center"></div>
+          <div>
+            <div id="reader-author" class="text-xs font-bold"></div>
+            <div class="text-[11px] text-stone-400">Author</div>
+          </div>
+        </div>
+        <div id="reader-body" class="text-sm leading-relaxed text-stone-700 dark:text-stone-300 whitespace-pre-line"></div>
+        <div id="reader-tags" class="pt-4 flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-stoneBorder dark:border-espressoBorder py-5 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
+      <div>Crafted by Utkrsha · Backend Development Module 02 Project</div>
+      <div class="font-mono text-sage dark:text-sageDark">Node.js · Express.js · REST API</div>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // 1. LOCAL EXPRESS-LIKE API & STORAGE LAYER
+    // =========================================================================
+    const DB_KEYS = {
+      USERS: 'utkrsha_blog_users_v2',
+      BLOGS: 'utkrsha_blog_posts_v2',
+      SESSION: 'utkrsha_blog_session_v2',
+      BOOKMARKS: 'utkrsha_blog_bookmarks_v2'
+    };
+
+    let apiLogs = [];
+    let currentCategory = 'All';
+    let authMode = 'login';
+    let activeCodeFile = 'server.js';
+
+    function initDatabase() {
+      try {
+        if (!localStorage.getItem(DB_KEYS.USERS)) {
+          const defaultUsers = [
+            {
+              id: 'usr_101',
+              name: 'Utkrsha',
+              email: 'utkrsha@devnotes.in',
+              passwordHash: 'sha256$7f9a8b2c4e1d',
+              rawPassword: 'utkrsha123',
+              createdAt: new Date(Date.now() - 86400000 * 3).toISOString()
+            }
+          ];
+          localStorage.setItem(DB_KEYS.USERS, JSON.stringify(defaultUsers));
+        }
+
+        if (!localStorage.getItem(DB_KEYS.BLOGS)) {
+          const defaultBlogs = [
+            {
+              id: 'blg_101',
+              title: 'Setting Up My First Express.js Server & REST Routes',
+              category: 'Backend',
+              tags: ['nodejs', 'express', 'rest-api'],
+              cover: 'https://placehold.co/800x420/d95d39/faf8f5?text=Node.js+%26+Express+Notes',
+              content: 'While working on Module 02 of my internship, I wanted to make sure the backend structure stayed clean and easy to debug.\n\nInstead of cramming everything into a single callback, I separated user authentication (/api/auth/register and /api/auth/login) from the blog endpoints (/api/blogs). Adding cors() and express.json() right at the top saved a lot of headaches when connecting my frontend fetch requests.',
+              author: 'Utkrsha',
+              authorEmail: 'utkrsha@devnotes.in',
+              likes: 14,
+              createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+            },
+            {
+              id: 'blg_102',
+              title: 'How Token Authentication Protects the Create Blog Endpoint',
+              category: 'Dev Journey',
+              tags: ['auth', 'middleware', 'security'],
+              cover: 'https://placehold.co/800x420/2a6f68/faf8f5?text=REST+API+%26+Backend+Flow',
+              content: 'One key takeaway from building this blogging app is understanding how protected routes work.\n\nAnyone visiting the site can read articles via GET /api/blogs, which is public. However, when someone tries to publish a post via POST /api/blogs, a custom middleware function checks the Authorization Bearer header first. If the token is missing or invalid, the server immediately responds with a 401 status.',
+              author: 'Utkrsha',
+              authorEmail: 'utkrsha@devnotes.in',
+              likes: 19,
+              createdAt: new Date(Date.now() - 86400000).toISOString()
+            },
+            {
+              id: 'blg_103',
+              title: 'Why Lightweight REST APIs Matter for EV & IoT Telemetry',
+              category: 'EV & IoT',
+              tags: ['iot', 'telemetry', 'json', 'apis'],
+              cover: 'https://placehold.co/800x420/292524/e87a5d?text=EV+Telemetry+%26+APIs',
+              content: 'Beyond blogging platforms, the exact same Express.js REST architecture powers real-world hardware dashboards.\n\nWhether logging battery voltage from an EV test bench or temperature packets from an IoT node, keeping JSON payloads compact and predictable makes both backend storage and frontend visualization fast and reliable.',
+              author: 'Utkrsha',
+              authorEmail: 'utkrsha@devnotes.in',
+              likes: 22,
+              createdAt: new Date(Date.now() - 3600000 * 6).toISOString()
+            }
+          ];
+          localStorage.setItem(DB_KEYS.BLOGS, JSON.stringify(defaultBlogs));
+        }
+      } catch (err) {
+        console.error('Storage setup issue:', err);
+      }
+    }
+
+    function logHttpTraffic(method, endpoint, status, requestPayload, responsePayload, headers = {}) {
+      const entry = {
+        id: 'req_' + Math.random().toString(36).substring(2, 7),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        method,
+        endpoint,
+        status,
+        headers,
+        requestPayload,
+        responsePayload
+      };
+      apiLogs.unshift(entry);
+      updateApiInspectorUI();
+    }
+
+    // POST /api/auth/register
+    function apiRegisterUser({ name, email, password }) {
+      const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
+      const exists = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+      if (exists) {
+        const res = { success: false, message: 'An account with this email already exists.' };
+        logHttpTraffic('POST', '/api/auth/register', 409, { name, email, password: '••••••' }, res);
+        return { status: 409, data: res };
+      }
+
+      const newUser = {
+        id: 'usr_' + Math.floor(100 + Math.random() * 900),
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        passwordHash: 'sha256$' + btoa(password).slice(0, 16),
+        rawPassword: password,
+        createdAt: new Date().toISOString()
+      };
+
+      users.push(newUser);
+      localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
+
+      const token = generateMockJWT(newUser);
+      const session = { user: { id: newUser.id, name: newUser.name, email: newUser.email }, token };
+      localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(session));
+
+      const res = {
+        success: true,
+        message: 'Account created successfully',
+        token,
+        user: session.user
+      };
+      logHttpTraffic('POST', '/api/auth/register', 201, { name, email, password: '••••••' }, res);
+      return { status: 201, data: res };
+    }
+
+    // POST /api/auth/login
+    function apiLoginUser({ email, password }) {
+      const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
+      const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+
+      if (!user || user.rawPassword !== password) {
+        const res = { success: false, message: 'Invalid email or password.' };
+        logHttpTraffic('POST', '/api/auth/login', 401, { email, password: '••••••' }, res);
+        return { status: 401, data: res };
+      }
+
+      const token = generateMockJWT(user);
+      const session = { user: { id: user.id, name: user.name, email: user.email }, token };
+      localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(session));
+
+      const res = {
+        success: true,
+        message: 'Signed in successfully',
+        token,
+        user: session.user
+      };
+      logHttpTraffic('POST', '/api/auth/login', 200, { email, password: '••••••' }, res);
+      return { status: 200, data: res };
+    }
+
+    // GET /api/blogs
+    function apiFetchBlogs(manualTrigger = false) {
+      const blogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+      const res = {
+        success: true,
+        count: blogs.length,
+        blogs: blogs.map(b => ({ id: b.id, title: b.title, category: b.category, author: b.author }))
+      };
+      logHttpTraffic('GET', '/api/blogs', 200, null, res);
+      if (manualTrigger) {
+        showToast(`GET /api/blogs returned ${blogs.length} posts (200 OK)`, 'success');
+      }
+      return blogs;
+    }
+
+    // POST /api/blogs
+    function apiCreateBlog({ title, category, tags, cover, content }) {
+      const session = getSession();
+      if (!session || !session.token) {
+        const res = { success: false, message: 'Unauthorized: Please sign in first.' };
+        logHttpTraffic('POST', '/api/blogs', 401, { title, category }, res, { Authorization: 'Missing' });
+        return { status: 401, data: res };
+      }
+
+      const blogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+      const newBlog = {
+        id: 'blg_' + Math.floor(100 + Math.random() * 900),
+        title: title.trim(),
+        category,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        cover,
+        content: content.trim(),
+        author: session.user.name,
+        authorEmail: session.user.email,
+        likes: 1,
+        createdAt: new Date().toISOString()
+      };
+
+      blogs.unshift(newBlog);
+      localStorage.setItem(DB_KEYS.BLOGS, JSON.stringify(blogs));
+
+      const res = {
+        success: true,
+        message: 'Blog post published',
+        post: newBlog
+      };
+      logHttpTraffic(
+        'POST',
+        '/api/blogs',
+        201,
+        { title: newBlog.title, category: newBlog.category, tags: newBlog.tags },
+        res,
+        { Authorization: 'Bearer ' + session.token.slice(0, 20) + '...' }
+      );
+      return { status: 201, data: res };
+    }
+
+    // DELETE /api/blogs/:id
+    function apiDeleteBlog(blogId) {
+      const session = getSession();
+      if (!session) {
+        showToast('Sign in first to delete a post.', 'info');
+        return;
+      }
+      let blogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+      const target = blogs.find(b => b.id === blogId);
+      if (!target) return;
+
+      blogs = blogs.filter(b => b.id !== blogId);
+      localStorage.setItem(DB_KEYS.BLOGS, JSON.stringify(blogs));
+
+      logHttpTraffic(
+        'DELETE',
+        `/api/blogs/${blogId}`,
+        200,
+        null,
+        { success: true, message: `Deleted post ${blogId}` },
+        { Authorization: 'Bearer ' + session.token.slice(0, 20) + '...' }
+      );
+      showToast('Post removed via DELETE /api/blogs/' + blogId, 'info');
+      renderBlogs();
+    }
+
+    function generateMockJWT(user) {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ id: user.id, email: user.email, iat: Math.floor(Date.now() / 1000) }));
+      const sig = btoa(user.id + '_utkrsha_dev').replace(/=/g, '');
+      return `${header}.${payload}.${sig}`;
+    }
+
+    function getSession() {
+      try {
+        return JSON.parse(localStorage.getItem(DB_KEYS.SESSION));
+      } catch {
+        return null;
+      }
+    }
+
+    // =========================================================================
+    // 2. UI RENDERING
+    // =========================================================================
+    function renderNavAuth() {
+      const container = document.getElementById('nav-auth-container');
+      const session = getSession();
+
+      if (session && session.user) {
+        const initials = session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        container.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sage/10 dark:bg-sageDark/15 border border-sage/25 dark:border-sageDark/25">
+              <span class="w-6 h-6 rounded-full bg-sage dark:bg-sageDark text-white font-serif font-bold text-xs flex items-center justify-center">${initials}</span>
+              <span class="text-xs font-semibold text-sage dark:text-sageDark">${escapeHtml(session.user.name)}</span>
+            </div>
+            <button onclick="logoutUser()" class="px-3 py-2 rounded-xl bg-white dark:bg-espressoCard hover:bg-stone-100 dark:hover:bg-stone-800 text-xs font-semibold border border-stoneBorder dark:border-espressoBorder transition">
+              Sign Out
+            </button>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <button onclick="openAuthModal('login')" class="px-4 py-2 rounded-xl bg-terracotta hover:bg-terracottaHover text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+            Sign In
+          </button>
+        `;
+      }
+      updateApiInspectorUI();
+    }
+
+    function renderBlogs() {
+      const grid = document.getElementById('blog-grid');
+      const searchQuery = (document.getElementById('search-input')?.value || '').toLowerCase();
+      const allBlogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+      const bookmarks = JSON.parse(localStorage.getItem(DB_KEYS.BOOKMARKS) || '[]');
+      const session = getSession();
+
+      const filtered = allBlogs.filter(blog => {
+        const matchesCat =
+          currentCategory === 'All' ||
+          (currentCategory === 'Bookmarked' && bookmarks.includes(blog.id)) ||
+          blog.category === currentCategory;
+
+        const matchesSearch =
+          blog.title.toLowerCase().includes(searchQuery) ||
+          blog.author.toLowerCase().includes(searchQuery) ||
+          blog.tags.some(t => t.toLowerCase().includes(searchQuery));
+
+        return matchesCat && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-16 text-center bg-white dark:bg-espressoCard rounded-2xl border border-stoneBorder dark:border-espressoBorder">
+            <p class="font-serif text-lg font-bold text-charcoal dark:text-stone-200">No posts found here yet</p>
+            <p class="text-xs text-stone-500 mt-1">Try another filter or click "Write a Post" to publish a new note.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(blog => {
+        const isSaved = bookmarks.includes(blog.id);
+        const dateStr = new Date(blog.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const initials = blog.author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+        return `
+          <article class="group bg-white dark:bg-espressoCard rounded-2xl border border-stoneBorder dark:border-espressoBorder overflow-hidden shadow-sm hover:shadow-md hover:border-terracotta/50 transition-all flex flex-col">
+            <div class="relative h-44 overflow-hidden bg-stone-800 cursor-pointer" onclick="openReaderModal('${blog.id}')">
+              <img src="${blog.cover}" alt="${escapeHtml(blog.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/800x420/292524/e87a5d?text=Dev+Notes'" />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-charcoal/80 text-stone-100 backdrop-blur-sm">
+                ${escapeHtml(blog.category)}
+              </span>
+            </div>
+
+            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-[11px] text-stone-400">
+                  <span>${dateStr}</span>
+                  <span class="font-mono text-sage dark:text-sageDark">${blog.id}</span>
+                </div>
+                <h3 onclick="openReaderModal('${blog.id}')" class="font-serif font-bold text-lg leading-snug group-hover:text-terracotta dark:group-hover:text-terracottaDark cursor-pointer transition line-clamp-2">
+                  ${escapeHtml(blog.title)}
+                </h3>
+                <p class="text-xs text-stone-600 dark:text-stone-400 line-clamp-3 leading-relaxed">
+                  ${escapeHtml(blog.content)}
+                </p>
+              </div>
+
+              <div class="space-y-3 pt-3 border-t border-stoneBorder/70 dark:border-espressoBorder">
+                <div class="flex flex-wrap gap-1.5">
+                  ${blog.tags.slice(0, 3).map(tag => `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder/60 dark:border-espressoBorder">#${escapeHtml(tag)}</span>`).join('')}
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-terracotta text-white font-serif font-bold text-[11px] flex items-center justify-center">
+                      ${initials}
+                    </div>
+                    <span class="text-xs font-semibold truncate max-w-[115px]">${escapeHtml(blog.author)}</span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="toggleLike('${blog.id}')" class="px-2.5 py-1.5 rounded-lg bg-paper dark:bg-espresso hover:bg-terracotta/10 hover:text-terracotta text-xs font-semibold border border-stoneBorder/70 dark:border-espressoBorder flex items-center gap-1 transition">
+                      <span>♥</span>
+                      <span>${blog.likes}</span>
+                    </button>
+                    <button onclick="toggleBookmark('${blog.id}')" aria-label="Bookmark" class="p-1.5 rounded-lg border border-stoneBorder/70 dark:border-espressoBorder ${isSaved ? 'bg-terracotta/15 text-terracotta' : 'bg-paper dark:bg-espresso text-stone-400 hover:text-terracotta'} transition">
+                      <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                    </button>
+                    ${session ? `
+                      <button onclick="apiDeleteBlog('${blog.id}')" aria-label="Delete Post" title="Delete post" class="p-1.5 rounded-lg bg-paper dark:bg-espresso border border-stoneBorder/70 dark:border-espressoBorder text-stone-400 hover:text-rose-600 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function updateApiInspectorUI() {
+      const badge = document.getElementById('api-log-badge');
+      if (badge) badge.textContent = apiLogs.length;
+
+      const session = getSession();
+      const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
+      const blogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+
+      const authStatusEl = document.getElementById('inspector-auth-status');
+      const jwtPreviewEl = document.getElementById('inspector-jwt-preview');
+      const dbStatsEl = document.getElementById('inspector-db-stats');
+
+      if (authStatusEl && jwtPreviewEl) {
+        if (session && session.user) {
+          authStatusEl.textContent = 'Signed in as ' + session.user.name;
+          authStatusEl.className = 'mt-1 text-lg font-bold text-sage dark:text-sageDark truncate';
+          jwtPreviewEl.textContent = 'Bearer ' + session.token;
+        } else {
+          authStatusEl.textContent = 'Not Logged In';
+          authStatusEl.className = 'mt-1 text-lg font-bold text-amber-600 dark:text-amber-400';
+          jwtPreviewEl.textContent = 'No Bearer token set';
+        }
+      }
+
+      if (dbStatsEl) {
+        dbStatsEl.textContent = `${users.length} Users · ${blogs.length} Posts`;
+      }
+
+      const logsContainer = document.getElementById('api-logs-container');
+      if (!logsContainer) return;
+
+      if (apiLogs.length === 0) {
+        logsContainer.innerHTML = `<div class="text-center py-12 text-stone-400">No requests recorded yet. Click "Run" on any endpoint on the left to test it.</div>`;
+        return;
+      }
+
+      logsContainer.innerHTML = apiLogs.map(log => {
+        const isSuccess = log.status >= 200 && log.status < 300;
+        const statusColor = isSuccess
+          ? 'bg-sage/15 text-sage dark:text-sageDark border-sage/30'
+          : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        const methodColor = log.method === 'GET' ? 'text-sage dark:text-sageDark' : 'text-terracotta dark:text-terracottaDark';
+
+        return `
+          <div class="p-3.5 rounded-xl bg-white dark:bg-espressoCard border border-stoneBorder dark:border-espressoBorder space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="font-bold ${methodColor}">${log.method}</span>
+                <span class="font-semibold text-charcoal dark:text-stone-100">${log.endpoint}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${statusColor}">${log.status}</span>
+                <span class="text-[10px] text-stone-400">${log.timestamp}</span>
+              </div>
+            </div>
+            ${log.requestPayload ? `
+              <div>
+                <div class="text-[10px] uppercase text-stone-400 mb-0.5">Request Body:</div>
+                <pre class="p-2 rounded-lg bg-paper dark:bg-espresso text-[11px] overflow-x-auto text-stone-700 dark:text-stone-300 border border-stoneBorder/50 dark:border-espressoBorder">${escapeHtml(JSON.stringify(log.requestPayload, null, 2))}</pre>
+              </div>
+            ` : ''}
+            <div>
+              <div class="text-[10px] uppercase text-stone-400 mb-0.5">Response JSON:</div>
+              <pre class="p-2.5 rounded-lg bg-[#191715] text-emerald-300 text-[11px] overflow-x-auto">${escapeHtml(JSON.stringify(log.responsePayload, null, 2))}</pre>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // 3. INTERACTIONS & MODALS
+    // =========================================================================
+    function switchTab(tab) {
+      const blogView = document.getElementById('view-blog');
+      const apiView = document.getElementById('view-api');
+      const btnBlog = document.getElementById('tab-btn-blog');
+      const btnApi = document.getElementById('tab-btn-api');
+
+      if (tab === 'blog') {
+        blogView.classList.remove('hidden');
+        apiView.classList.add('hidden');
+        btnBlog.className = 'flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-terracotta text-white shadow-sm';
+        btnApi.className = 'flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-stone-600 dark:text-stone-300 hover:text-terracotta';
+      } else {
+        blogView.classList.add('hidden');
+        apiView.classList.remove('hidden');
+        btnApi.className = 'flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-terracotta text-white shadow-sm';
+        btnBlog.className = 'flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-stone-600 dark:text-stone-300 hover:text-terracotta';
+        updateApiInspectorUI();
+      }
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-terracotta text-white transition';
+        } else {
+          btn.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder hover:border-terracotta transition';
+        }
+      });
+      renderBlogs();
+    }
+
+    function openAuthModal(mode = 'login') {
+      setAuthMode(mode);
+      const modal = document.getElementById('auth-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('auth-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function fillDemoCredentials() {
+      setAuthMode('login');
+      document.getElementById('auth-email').value = 'utkrsha@devnotes.in';
+      document.getElementById('auth-password').value = 'utkrsha123';
+      showToast('Filled demo credentials for Utkrsha', 'info');
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const title = document.getElementById('auth-modal-title');
+      const nameGroup = document.getElementById('auth-name-group');
+      const nameInput = document.getElementById('auth-name');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      const loginTab = document.getElementById('auth-switch-login');
+      const regTab = document.getElementById('auth-switch-register');
+
+      if (mode === 'register') {
+        title.textContent = 'Create Your Account';
+        nameGroup.classList.remove('hidden');
+        nameInput.required = true;
+        submitBtn.textContent = 'Register (POST /api/auth/register)';
+        regTab.className = 'py-2 rounded-lg text-xs font-bold bg-terracotta text-white transition';
+        loginTab.className = 'py-2 rounded-lg text-xs font-bold text-stone-600 dark:text-stone-300 transition';
+      } else {
+        title.textContent = 'Welcome Back';
+        nameGroup.classList.add('hidden');
+        nameInput.required = false;
+        submitBtn.textContent = 'Sign In (POST /api/auth/login)';
+        loginTab.className = 'py-2 rounded-lg text-xs font-bold bg-terracotta text-white transition';
+        regTab.className = 'py-2 rounded-lg text-xs font-bold text-stone-600 dark:text-stone-300 transition';
+      }
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('auth-name').value;
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+
+      if (authMode === 'register') {
+        const res = apiRegisterUser({ name, email, password });
+        if (res.status === 201) {
+          showToast('Account created! Welcome, ' + res.data.user.name, 'success');
+          closeAuthModal();
+          renderNavAuth();
+          renderBlogs();
+        } else {
+          showToast(res.data.message, 'error');
+        }
+      } else {
+        const res = apiLoginUser({ email, password });
+        if (res.status === 200) {
+          showToast('Signed in as ' + res.data.user.name, 'success');
+          closeAuthModal();
+          renderNavAuth();
+          renderBlogs();
+        } else {
+          showToast(res.data.message, 'error');
+        }
+      }
+    }
+
+    function logoutUser() {
+      localStorage.removeItem(DB_KEYS.SESSION);
+      renderNavAuth();
+      renderBlogs();
+      showToast('Signed out.', 'info');
+    }
+
+    function openCreateModal() {
+      const session = getSession();
+      if (!session) {
+        showToast('Please sign in first before writing a post.', 'info');
+        openAuthModal('login');
+        return;
+      }
+      const modal = document.getElementById('create-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeCreateModal() {
+      const modal = document.getElementById('create-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleCreateBlog(e) {
+      e.preventDefault();
+      const title = document.getElementById('blog-title').value;
+      const category = document.getElementById('blog-category').value;
+      const tags = document.getElementById('blog-tags').value;
+      const cover = document.getElementById('blog-cover').value;
+      const content = document.getElementById('blog-content').value;
+
+      const res = apiCreateBlog({ title, category, tags, cover, content });
+      if (res.status === 201) {
+        showToast('Published! (POST /api/blogs -> 201 Created)', 'success');
+        document.getElementById('blog-title').value = '';
+        document.getElementById('blog-content').value = '';
+        closeCreateModal();
+        renderBlogs();
+      } else {
+        showToast(res.data.message, 'error');
+      }
+    }
+
+    function openReaderModal(blogId) {
+      const blogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+      const blog = blogs.find(b => b.id === blogId);
+      if (!blog) return;
+
+      document.getElementById('reader-cover').src = blog.cover;
+      document.getElementById('reader-category').textContent = blog.category;
+      document.getElementById('reader-date').textContent = new Date(blog.createdAt).toLocaleDateString('en-US', { dateStyle: 'long' });
+      document.getElementById('reader-title').textContent = blog.title;
+      document.getElementById('reader-author').textContent = blog.author;
+      document.getElementById('reader-avatar').textContent = blog.author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      document.getElementById('reader-body').textContent = blog.content;
+      document.getElementById('reader-tags').innerHTML = blog.tags.map(t => `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-paper dark:bg-espresso text-terracotta dark:text-terracottaDark border border-stoneBorder dark:border-espressoBorder">#${escapeHtml(t)}</span>`).join('');
+
+      const modal = document.getElementById('reader-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeReaderModal() {
+      const modal = document.getElementById('reader-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function toggleLike(blogId) {
+      const blogs = JSON.parse(localStorage.getItem(DB_KEYS.BLOGS) || '[]');
+      const idx = blogs.findIndex(b => b.id === blogId);
+      if (idx !== -1) {
+        blogs[idx].likes += 1;
+        localStorage.setItem(DB_KEYS.BLOGS, JSON.stringify(blogs));
+        logHttpTraffic('PATCH', `/api/blogs/${blogId}/like`, 200, { like: true }, { success: true, likes: blogs[idx].likes });
+        renderBlogs();
+      }
+    }
+
+    function toggleBookmark(blogId) {
+      let bookmarks = JSON.parse(localStorage.getItem(DB_KEYS.BOOKMARKS) || '[]');
+      if (bookmarks.includes(blogId)) {
+        bookmarks = bookmarks.filter(id => id !== blogId);
+        showToast('Removed from reading list', 'info');
+      } else {
+        bookmarks.push(blogId);
+        showToast('Saved to reading list', 'success');
+      }
+      localStorage.setItem(DB_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
+      renderBlogs();
+    }
+
+    function triggerQuickDemoRegister() {
+      const rand = Math.floor(10 + Math.random() * 89);
+      const res = apiRegisterUser({
+        name: `Reader ${rand}`,
+        email: `reader${rand}@devnotes.in`,
+        password: 'password123'
+      });
+      if (res.status === 201) {
+        renderNavAuth();
+        renderBlogs();
+        showToast(`Created reader${rand}@devnotes.in (201 Created)`, 'success');
+      }
+    }
+
+    function triggerQuickDemoLogin() {
+      const res = apiLoginUser({ email: 'utkrsha@devnotes.in', password: 'utkrsha123' });
+      if (res.status === 200) {
+        renderNavAuth();
+        renderBlogs();
+        showToast('Signed in as Utkrsha (200 OK)', 'success');
+      }
+    }
+
+    function clearApiLogs() {
+      apiLogs = [];
+      updateApiInspectorUI();
+    }
+
+    // =========================================================================
+    // 4. HUMAN-WRITTEN NODE.JS + EXPRESS.JS CODE FOR GITHUB
+    // =========================================================================
+    const BACKEND_FILES = {
+      'server.js': `// server.js
+// Express.js backend for my blogging app (Module 02 - Backend Development)
+// Author: Utkrsha
+
+const express = require('express');
+const cors = require('cors');
+const crypto = require('crypto');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+const SECRET_KEY = process.env.JWT_SECRET || 'utkrsha_local_dev_secret';
+
+// Enable CORS so my frontend can call these endpoints cleanly
+app.use(cors());
+app.use(express.json());
+
+// Temporary in-memory arrays (will connect to a real database in Module 03)
+const users = [];
+const blogs = [
+  {
+    id: 'blg_101',
+    title: 'Setting Up My First Express.js Server & REST Routes',
+    category: 'Backend',
+    tags: ['nodejs', 'express', 'rest-api'],
+    content: 'Testing out my REST API endpoints for user authentication and creating blog posts.',
+    author: 'Utkrsha',
+    createdAt: new Date().toISOString()
+  }
+];
+
+// Hash passwords before saving them
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Create a signed token on login/registration
+function createToken(payload) {
+  const encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const signature = crypto.createHmac('sha256', SECRET_KEY).update(encoded).digest('hex');
+  return \`\${encoded}.\${signature}\`;
+}
+
+// Middleware to protect routes like creating or deleting a post
+function requireAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Please log in first.' });
+  }
+
+  const [encoded, signature] = token.split('.');
+  const validSig = crypto.createHmac('sha256', SECRET_KEY).update(encoded).digest('hex');
+
+  if (signature !== validSig) {
+    return res.status(403).json({ success: false, message: 'Invalid session token.' });
+  }
+
+  req.user = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
+  next();
+}
+
+// 1. User Registration
+app.post('/api/auth/register', (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ success: false, message: 'All fields are required.' });
+  }
+
+  const alreadyExists = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (alreadyExists) {
+    return res.status(409).json({ success: false, message: 'Email is already registered.' });
+  }
+
+  const newUser = {
+    id: 'usr_' + Date.now(),
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    passwordHash: hashPassword(password),
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(newUser);
+  const token = createToken({ id: newUser.id, name: newUser.name, email: newUser.email });
+
+  res.status(201).json({
+    success: true,
+    message: 'Account created',
+    token,
+    user: { id: newUser.id, name: newUser.name, email: newUser.email }
+  });
+});
+
+// 2. User Login
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password are required.' });
+  }
+
+  const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+  if (!user || user.passwordHash !== hashPassword(password)) {
+    return res.status(401).json({ success: false, message: 'Incorrect email or password.' });
+  }
+
+  const token = createToken({ id: user.id, name: user.name, email: user.email });
+
+  res.status(200).json({
+    success: true,
+    message: 'Logged in',
+    token,
+    user: { id: user.id, name: user.name, email: user.email }
+  });
+});
+
+// 3. Get All Blogs (Public)
+app.get('/api/blogs', (req, res) => {
+  res.status(200).json({
+    success: true,
+    count: blogs.length,
+    blogs
+  });
+});
+
+// 4. Create Blog Post (Protected)
+app.post('/api/blogs', requireAuth, (req, res) => {
+  const { title, category, tags, content } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ success: false, message: 'Title and content are required.' });
+  }
+
+  const post = {
+    id: 'blg_' + Date.now(),
+    title: title.trim(),
+    category: category || 'Backend',
+    tags: Array.isArray(tags) ? tags : [],
+    content: content.trim(),
+    author: req.user.name,
+    createdAt: new Date().toISOString()
+  };
+
+  blogs.unshift(post);
+
+  res.status(201).json({
+    success: true,
+    message: 'Post published',
+    post
+  });
+});
+
+// 5. Delete Blog Post (Protected)
+app.delete('/api/blogs/:id', requireAuth, (req, res) => {
+  const index = blogs.findIndex(b => b.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Post not found.' });
+  }
+
+  blogs.splice(index, 1);
+  res.status(200).json({ success: true, message: 'Post deleted' });
+});
+
+app.listen(PORT, () => {
+  console.log(\`Server running at http://localhost:\${PORT}\`);
+});`,
+
+      'package.json': `{
+  "name": "backend-blog-app",
+  "version": "1.0.0",
+  "description": "Node.js and Express.js REST API for my blogging application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "author": "Utkrsha",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}`
+    };
+
+    function switchCodeFile(filename) {
+      activeCodeFile = filename;
+      document.getElementById('code-viewer').textContent = BACKEND_FILES[filename];
+
+      const btnServer = document.getElementById('code-tab-server');
+      const btnPkg = document.getElementById('code-tab-package');
+
+      if (filename === 'server.js') {
+        btnServer.className = 'px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-terracotta text-white transition';
+        btnPkg.className = 'px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder transition';
+      } else {
+        btnPkg.className = 'px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-terracotta text-white transition';
+        btnServer.className = 'px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-paper dark:bg-espresso text-stone-600 dark:text-stone-300 border border-stoneBorder dark:border-espressoBorder transition';
+      }
+    }
+
+    function copyTextFallback(text, successMsg) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg, 'success');
+      } catch (err) {
+        showToast('Could not copy text.', 'error');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function copyActiveCode() {
+      copyTextFallback(BACKEND_FILES[activeCodeFile], `Copied ${activeCodeFile} to clipboard!`);
+    }
+
+    function downloadActiveCode() {
+      const blob = new Blob([BACKEND_FILES[activeCodeFile]], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = activeCodeFile;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Downloaded ${activeCodeFile}`, 'success');
+    }
+
+    function copyLinkedInPost() {
+      const postText = `Wrapped up Module 02 (Backend Development) of my Web Development Internship at Codomax Digital Solutions! 💻\n\nOver the last few days, I built the backend server for my blogging application using Node.js and Express.js and connected it with my frontend interface.\n\nWhat I built in this module:\n• Set up an Express.js server with CORS and JSON request parsing\n• Created REST endpoints for User Registration (POST /api/auth/register) and Login (POST /api/auth/login) with token-based authentication\n• Built protected endpoints to publish and manage blog posts (GET, POST, DELETE /api/blogs)\n• Connected the frontend UI to fetch and submit live data through these APIs\n\nNext up: integrating a database in Module 03! Always open to feedback and tips from fellow developers.\n\n#NodeJS #ExpressJS #WebDevelopment #BackendDevelopment #RESTAPI #JavaScript #FullStack`;
+      copyTextFallback(postText, 'Copied LinkedIn post draft!');
+    }
+
+    // =========================================================================
+    // 5. TOAST NOTIFICATIONS & ESCAPING
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-sage text-white border-sage/40',
+        error: 'bg-rose-700 text-white border-rose-500/40',
+        info: 'bg-charcoal text-stone-100 border-terracotta/50'
+      };
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold flex items-center justify-between gap-3 animate-fade-up ${colors[type] || colors.info}`;
+      toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initDatabase();
+      renderNavAuth();
+      apiFetchBlogs(false);
+      renderBlogs();
+      switchCodeFile('server.js');
+    });
+  </script>
+</body>
+</html>
